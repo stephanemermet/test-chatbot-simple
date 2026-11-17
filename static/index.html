@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chatbot simple</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="app">
+  <header>
+    <div class="brand"><span class="dot"></span><h1>Chatbot</h1><small id="model"></small></div>
+    <button id="reset" title="Nouvelle conversation">Nouvelle conversation</button>
+  </header>
+  <section id="chat" class="chat" aria-live="polite">
+    <div class="empty" id="empty">
+      <h2>Bonjour 👋</h2>
+      <p>Posez-moi une question pour commencer.</p>
+    </div>
+  </section>
+  <form id="form" class="composer">
+    <textarea id="input" rows="1" placeholder="Écrivez votre message…" autofocus></textarea>
+    <button type="submit" id="send" aria-label="Envoyer">➤</button>
+  </form>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+:root {
+  --bg: #f6f7fb; --card: #ffffff; --text: #1c1f2a; --muted: #6b7280; --border: #e5e7eb;
+  --accent: #6366f1; --accent-text: #ffffff; --user: #6366f1; --bot: #eef0f6;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0f1117; --card: #171a23; --text: #e8eaf0; --muted: #9aa3b2; --border: #272b38;
+          --accent: #818cf8; --accent-text: #0f1117; --user: #4f46e5; --bot: #202432; }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.app { max-width: 760px; height: 100%; margin: 0 auto; display: flex; flex-direction: column;
+  padding: 16px; gap: 12px; }
+header { display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand h1 { font-size: 18px; margin: 0; }
+.brand small { color: var(--muted); font-size: 12px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); }
+#reset { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 12px;
+  border-radius: 999px; cursor: pointer; font: inherit; font-size: 13px; }
+#reset:hover { color: var(--text); border-color: var(--accent); }
+.chat { flex: 1; overflow-y: auto; background: var(--card); border: 1px solid var(--border);
+  border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.empty { margin: auto; text-align: center; color: var(--muted); }
+.empty h2 { color: var(--text); margin: 0 0 4px; }
+.msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap;
+  word-wrap: break-word; animation: in .18s ease-out; }
+.msg.user { align-self: flex-end; background: var(--user); color: #fff; border-bottom-right-radius: 4px; }
+.msg.bot { align-self: flex-start; background: var(--bot); border-bottom-left-radius: 4px; }
+.msg.error { background: #fee2e2; color: #991b1b; }
+.msg code { background: rgba(127,127,127,.2); padding: 1px 5px; border-radius: 5px;
+  font: 0.9em ui-monospace, monospace; }
+.msg pre { background: #0b0d13; color: #e6e8ee; padding: 12px; border-radius: 10px; overflow-x: auto;
+  margin: 8px 0 0; white-space: pre; }
+.msg pre code { background: none; padding: 0; }
+.typing::after { content: "▍"; animation: blink 1s steps(2) infinite; }
+.composer { display: flex; gap: 8px; align-items: flex-end; background: var(--card);
+  border: 1px solid var(--border); border-radius: 18px; padding: 8px; }
+.composer:focus-within { border-color: var(--accent); }
+textarea { flex: 1; resize: none; border: none; outline: none; background: transparent;
+  color: var(--text); font: inherit; max-height: 160px; padding: 8px 10px; }
+#send { width: 40px; height: 40px; border: none; border-radius: 50%; background: var(--accent);
+  color: var(--accent-text); font-size: 16px; cursor: pointer; }
+#send:disabled { opacity: .45; cursor: not-allowed; }
+@keyframes in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes blink { 50% { opacity: 0; } }
+@media (max-width: 520px) { .app { padding: 8px; } .msg { max-width: 92%; } }
