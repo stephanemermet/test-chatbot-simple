@@ -2,38 +2,69 @@ const chat = document.getElementById("chat");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
-const empty = document.getElementById("empty");
+const welcome = document.getElementById("welcome");
 let history = [];
 let busy = false;
 
 fetch("/api/health").then(r => r.json()).then(h => {
-  document.getElementById("model").textContent = h.model + (h.configured ? "" : " · clé manquante");
-}).catch(() => {});
+  document.getElementById("model").textContent = h.configured ? h.model : "clé API manquante";
+  if (!h.configured) document.querySelector(".pulse").classList.add("off");
+}).catch(() => {
+  document.getElementById("model").textContent = "hors ligne";
+  document.querySelector(".pulse").classList.add("off");
+});
 
-// Rendu minimal et sûr : on échappe tout, puis on met en forme ``` et `code`.
-function render(text) {
-  const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return esc
-    .replace(/```(?:\w+)?\n?([\s\S]*?)```/g, (_, c) => `<pre><code>${c}</code></pre>`)
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+function inline(s) {
+  return esc(s)
     .replace(/`([^`\n]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
 }
 
-function addMessage(role, text = "") {
-  empty.style.display = "none";
-  const el = document.createElement("div");
-  el.className = `msg ${role}`;
-  el.innerHTML = render(text);
-  chat.appendChild(el);
+// Rendu Markdown minimal et sûr (tout est échappé avant mise en forme).
+function render(text) {
+  const parts = text.split(/```/);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) { // bloc de code (éventuellement non terminé pendant le streaming)
+      const nl = part.indexOf("\n");
+      const lang = nl > -1 ? part.slice(0, nl).trim() : "";
+      const code = nl > -1 ? part.slice(nl + 1) : part;
+      return `<div class="codeblock"><div class="codehead"><span>${esc(lang) || "code"}</span>` +
+             `<button class="copy" type="button">Copier</button></div><pre><code>${esc(code)}</code></pre></div>`;
+    }
+    const out = []; let list = null;
+    const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+    for (const line of part.split("\n")) {
+      let m;
+      if ((m = line.match(/^\s*[-*]\s+(.*)/))) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push(`<li>${inline(m[1])}</li>`); }
+      else if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push(`<li>${inline(m[1])}</li>`); }
+      else if ((m = line.match(/^#{1,4}\s+(.*)/))) { close(); out.push(`<h3>${inline(m[1])}</h3>`); }
+      else if (line.trim()) { close(); out.push(`<p>${inline(line)}</p>`); }
+      else close();
+    }
+    close();
+    return out.join("");
+  }).join("");
+}
+
+function addRow(role, text = "") {
+  welcome.style.display = "none";
+  const row = document.createElement("div");
+  row.className = `row ${role}`;
+  row.innerHTML = `<div class="avatar">${role === "user" ? "Moi" : "AI"}</div><div class="msg"></div>`;
+  const msg = row.querySelector(".msg");
+  if (role === "user") msg.textContent = text; else msg.innerHTML = text;
+  chat.appendChild(row);
   chat.scrollTop = chat.scrollHeight;
-  return el;
+  return msg;
 }
 
 async function ask(text) {
   history.push({ role: "user", content: text });
-  addMessage("user", text);
-  const bubble = addMessage("bot");
-  bubble.classList.add("typing");
+  addRow("user", text);
+  const bubble = addRow("bot", '<span class="dots"><i></i><i></i><i></i></span>');
   let answer = "";
   try {
     const res = await fetch("/api/chat", {
@@ -62,35 +93,42 @@ async function ask(text) {
         } catch {}
       }
     }
+    if (!answer) throw new Error("Réponse vide du modèle.");
     history.push({ role: "assistant", content: answer });
   } catch (err) {
-    history.pop(); // on retire la question restée sans réponse
-    bubble.classList.add("error");
+    history.pop();
+    bubble.parentElement.classList.replace("bot", "error");
     bubble.textContent = err.message;
-  } finally {
-    bubble.classList.remove("typing");
   }
 }
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = input.value.trim();
+async function submit(text) {
+  text = text.trim();
   if (!text || busy) return;
   busy = true; send.disabled = true;
   input.value = ""; input.style.height = "auto";
   await ask(text);
   busy = false; send.disabled = false; input.focus();
-});
+}
 
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+form.addEventListener("submit", e => { e.preventDefault(); submit(input.value); });
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
 });
 input.addEventListener("input", () => {
   input.style.height = "auto";
-  input.style.height = Math.min(input.scrollHeight, 160) + "px";
+  input.style.height = Math.min(input.scrollHeight, 180) + "px";
 });
+document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => submit(c.textContent)));
 document.getElementById("reset").addEventListener("click", () => {
   history = [];
-  chat.querySelectorAll(".msg").forEach(m => m.remove());
-  empty.style.display = "";
+  chat.querySelectorAll(".row").forEach(r => r.remove());
+  welcome.style.display = "";
+});
+chat.addEventListener("click", e => {
+  const btn = e.target.closest(".copy");
+  if (!btn) return;
+  navigator.clipboard.writeText(btn.closest(".codeblock").querySelector("code").textContent).then(() => {
+    btn.textContent = "Copié ✓"; setTimeout(() => (btn.textContent = "Copier"), 1500);
+  });
 });

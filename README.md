@@ -1,7 +1,7 @@
 # Chatbot simple (Groq)
 
 Chatbot web minimal : serveur Python sans dépendance + page statique, réponses en streaming via l'API Groq
-(modèle économique `llama-3.1-8b-instant` par défaut).
+(modèle économique `openai/gpt-oss-20b` par défaut).
 
 ## Démarrage
 

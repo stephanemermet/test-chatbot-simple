@@ -29,7 +29,7 @@ def load_env(path: Path) -> None:
 load_env(ROOT / ".env")
 
 API_KEY = os.environ.get("GROQ_API_KEY", "")
-MODEL = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
+MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 SYSTEM_PROMPT = os.environ.get(
     "SYSTEM_PROMPT",
     "Tu es un assistant sympathique et concis. Réponds dans la langue de l'utilisateur.",
